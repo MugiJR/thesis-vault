@@ -3,3 +3,8 @@
 
 # Ignore Gradle build output directory
 build
+
+# Ignore IntelliJ workspace directory
+.idea
+
+result.json
