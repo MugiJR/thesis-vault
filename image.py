@@ -142,7 +142,7 @@ def computeASTSizes(ast):
     return astDepth+1, width
 
 
-def drawAST(filename, ast, sizeInfo):
+def drawAST(filename, pngname, ast, sizeInfo):
     levelHeight = 15
     # create a new SVG drawing
     dwg = svgwrite.Drawing(
@@ -171,10 +171,24 @@ def drawAST(filename, ast, sizeInfo):
     innerDrawAST(ast, 0, 0)
     # save the SVG
     dwg.save()
+    #install Inkscape and/or GraphViz for Windows
+    #from cairosvg import svg2png
+    #svg2png(file_obj=open(filename + ".svg", "rb"),write_to=filename + '.png')
+    from svglib.svglib import svg2rlg
+    from reportlab.graphics import renderPM
+    drawing = svg2rlg(filename + ".svg")
+    renderPM.drawToFile(drawing, pngname + ".png", fmt="PNG")
 
 if not os.path.exists("app/svgArchives"): os.mkdir("app/svgArchives")
+if not os.path.exists("app/pngArchives"): os.mkdir("app/pngArchives")
+for label in range(1, 5+1):
+    if not os.path.exists("app/svgArchives" + "/" + str(label)): os.mkdir("app/svgArchives" + "/" + str(label))
+    if not os.path.exists("app/pngArchives" + "/" + str(label)): os.mkdir("app/pngArchives" + "/" + str(label))
 for jsonFile in glob.glob("app/jsonArchives/*.json", recursive=True):
         with open(jsonFile, 'rb') as file:
             ast = json.load(file)
             sizeInfo = computeASTSizes(ast)
-        drawAST(os.path.join("app\\svgArchives", os.path.splitext(os.path.basename(jsonFile))[0]), ast, sizeInfo)
+        label = 1
+        drawAST(os.path.join("app\\svgArchives", str(label), os.path.splitext(os.path.basename(jsonFile))[0]),
+                os.path.join("app\\pngArchives", str(label), os.path.splitext(os.path.basename(jsonFile))[0]),
+                ast, sizeInfo)
