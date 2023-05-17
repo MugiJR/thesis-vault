@@ -65,7 +65,8 @@ public class AppHelper {
             log.append(arr[index].getName()).append(" ----- ");
             try {
                 CompilationUnit cu = StaticJavaParser.parse(new File(arr[index].getAbsolutePath()));
-                LOGGER.fine("Parsing "+ arr[index].getName());
+                //LOGGER.info("Parsing "+ arr[index].getName());
+                //cu.getChildNodes().stream().map(Node::getParsed).forEach(System.out::println);
                 toJson(cu.getChildNodes());
                 String fileNameWithoutExt = arr[index].getName().substring(0,arr[index].getName().lastIndexOf("."));
                 String jsonArchivesPath = archivePath+"\\"+fileNameWithoutExt+".json";
@@ -75,7 +76,7 @@ public class AppHelper {
                 pw.close();
                 if (isStringValidJson(jsonLog.toString())) {
                     log.append("PARSED");
-                    LOGGER.fine("Generated "+ fileNameWithoutExt + ".json successfully ");
+                    LOGGER.info("Generated "+ fileNameWithoutExt + ".json successfully ");
                 }
                 else {
                     log.append("JSON ERROR");
@@ -148,9 +149,11 @@ public class AppHelper {
                         .append(node.getClass().getName())
                         .append("\", \"data\":\"")
                         .append(node.toString().replace("\\", "\\\\")
+                                .replaceAll("\r\n\\s+","\\\n")
                                 .replace("\n", "\\n")
                                 .replace("\r", "\\r")
-                                .replace("\"", "\\\""));
+                                .replace("\"", "\\\"")
+                                .replaceAll("\\s{2,}", " "));
 
                 if (node instanceof Name ||
                         node instanceof BlockStmt ||
