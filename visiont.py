@@ -1,13 +1,22 @@
 #https://towardsdatascience.com/understand-and-implement-vision-transformer-with-tensorflow-2-0-f5435769093
 
 import tensorflow as tf
-from tensorflow.keras.datasets import cifar10
-(x_train, y_train), (x_test, y_test) = cifar10.load_data()
-
-train_lab_categorical = tf.keras.utils.to_categorical(y_train, num_classes=10, dtype='uint8')
-test_lab_categorical = tf.keras.utils.to_categorical(y_test, num_classes=10, dtype='uint8')
+import numpy as np
+#from tensorflow.keras.datasets import cifar10
+#(x_train, y_train), (x_test, y_test) = cifar10.load_data()
+import learn
+x_train, y_train = learn.svg_to_tf()
+train_lab_categorical = tf.keras.utils.to_categorical(y_train, num_classes=5, dtype='uint8')
 from sklearn.model_selection import train_test_split
-train_im, valid_im, train_lab, valid_lab = train_test_split(x_train, train_lab_categorical, test_size=0.20, stratify=train_lab_categorical, random_state=40, shuffle = True)
+
+x_train, x_test, y_train, y_test = train_test_split(x_train, y_train, test_size=0.20,
+                                                    stratify=train_lab_categorical, random_state=int(np.random.random()*(1<<32-1)), shuffle = True)
+
+#print(y_train)
+train_lab_categorical = tf.keras.utils.to_categorical(y_train, num_classes=5, dtype='uint8')
+test_lab_categorical = tf.keras.utils.to_categorical(y_test, num_classes=5, dtype='uint8')
+train_im, valid_im, train_lab, valid_lab = train_test_split(x_train, train_lab_categorical, test_size=0.20,
+                                                            stratify=train_lab_categorical, random_state=int(np.random.random()*(1<<32-1)), shuffle = True)
 training_data = tf.data.Dataset.from_tensor_slices((train_im, train_lab))
 validation_data = tf.data.Dataset.from_tensor_slices((valid_im, valid_lab))
 test_data = tf.data.Dataset.from_tensor_slices((x_test, 
@@ -17,18 +26,8 @@ train_data_batches = training_data.shuffle(buffer_size=40000).batch(128).prefetc
 valid_data_batches = validation_data.shuffle(buffer_size=10000).batch(32).prefetch(buffer_size=autotune)
 test_data_batches = test_data.shuffle(buffer_size=10000).batch(32).prefetch(buffer_size=autotune)
 
-import tensorflow as tf
 from tensorflow.keras import layers
-from tensorflow.keras.datasets import cifar10
-from sklearn.model_selection import train_test_split
 #### load data and process
-(x_train, y_train), (x_test, y_test) = cifar10.load_data()
-train_lab_categorical = tf.keras.utils.to_categorical(y_train, num_classes=10, dtype='uint8')
- 
-train_im, valid_im, train_lab, valid_lab = train_test_split(x_train, train_lab_categorical, test_size=0.20, 
-                                                            stratify=train_lab_categorical, 
-                                                            random_state=40, shuffle = True)
-training_data = tf.data.Dataset.from_tensor_slices((train_im, train_lab))
 autotune = tf.data.AUTOTUNE 
 
 ##### generate patches 
@@ -63,9 +62,10 @@ patches = generate_patch_layer(train_iter_7im)
 
 print ('patch per image and patches shape: ', patches.shape[1], '\n', patches.shape)
 
-class_types = {0: "airplane", 1: "automobile", 2: "bird",
-    3: "cat", 4: "deer", 5: "dog", 6: "frog", 7: "horse",
-    8: "ship", 9: "truck"}
+#class_types = {0: "airplane", 1: "automobile", 2: "bird",
+#    3: "cat", 4: "deer", 5: "dog", 6: "frog", 7: "horse",
+#    8: "ship", 9: "truck"}
+class_types = {1: 'Unreadable', 2: 'Low Readability', 3: 'Average Readability', 4: 'Good Readability', 5: 'Excellent Readability'}
 
 def render_image_and_patches(image, patches):
     import numpy as np
@@ -83,7 +83,7 @@ def render_image_and_patches(image, patches):
     ax[0].add_artist(ab)
     ax[0].set_xticks([i/6 for i in range(7)], [str(x) for x in range(0, 35, 5)])
     ax[0].set_yticks([i/6 for i in range(7)], [str(x) for x in range(0, 35, 5)])
-    ax[1].set_xlabel(class_types[np.argmax(train_iter_7label)], fontsize=13)
+    ax[1].set_xlabel(class_types[np.argmax(train_iter_7label)+1], fontsize=13)
     #n = int(np.sqrt(patches.shape[1]))
     #plt.figure(figsize=(6, 6))
     ax[1].set_title("Image Patches", size=13)
@@ -223,7 +223,7 @@ transformer_layers = 6
 patch_size = 4
 hidden_size = 64
 num_heads = 4
-mlp_dim = 128
+mlp_dim = 128 #multilayer perceptron dimension
 
 ######################################
 
@@ -290,7 +290,7 @@ es = tf.keras.callbacks.EarlyStopping(monitor="val_loss", min_delta=1e-6, patien
 
 
 ViT_Train = ViT_model.fit(train_ds, 
-                        epochs = 120, 
+                        epochs = 10, 
                         validation_data=valid_ds, callbacks=[reduce_lr])
 
 
@@ -328,7 +328,7 @@ plt.xlabel('Epochs', fontsize=11)
 plt.ylabel('Top5 Accuracy', fontsize=12)
 plt.legend(fontsize=12)
 plt.tight_layout()
-# plt.savefig('/content/gdrive/My Drive/Colab Notebooks/resnet/train_acc.png', dpi=250)
+plt.savefig('train_acc.png', dpi=250)
 plt.show()
      
 
@@ -342,13 +342,13 @@ def conf_matrix(predictions):
     print("Classification Report:\n")
     cr=classification_report(y_test,
                                 np.argmax(np.round(predictions), axis=1), 
-                                target_names=[class_types[i] for i in range(len(class_types))])
+                                target_names=[class_types[i] for i in class_types])
     print(cr)
     plt.figure(figsize=(12,12))
-    sns_hmp = sns.heatmap(cm, annot=True, xticklabels = [class_types[i] for i in range(len(class_types))], 
-                yticklabels = [class_types[i] for i in range(len(class_types))], fmt="d")
+    sns_hmp = sns.heatmap(cm, annot=True, xticklabels = [class_types[i] for i in class_types], 
+                yticklabels = [class_types[i] for i in class_types], fmt="d")
     fig = sns_hmp.get_figure()
-    # fig.savefig('/content/gdrive/My Drive/Colab Notebooks/resnet/heatmap.png', dpi=250)
+    fig.savefig('heatmap.png', dpi=250)
 
 pred_class_resnet50 = ViT_model.predict(x_test)
 
