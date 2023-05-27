@@ -9,18 +9,15 @@ x_train, y_train = learn.svg_to_tf()
 train_lab_categorical = tf.keras.utils.to_categorical(y_train, num_classes=5, dtype='uint8')
 from sklearn.model_selection import train_test_split
 
-x_train, x_test, y_train, y_test = train_test_split(x_train, y_train, test_size=0.20,
+x_train, x_test, y_train, y_test = train_test_split(x_train, train_lab_categorical, test_size=0.20,
                                                     stratify=train_lab_categorical, random_state=int(np.random.random()*(1<<32-1)), shuffle = True)
 
 #print(y_train)
-train_lab_categorical = tf.keras.utils.to_categorical(y_train, num_classes=5, dtype='uint8')
-test_lab_categorical = tf.keras.utils.to_categorical(y_test, num_classes=5, dtype='uint8')
-train_im, valid_im, train_lab, valid_lab = train_test_split(x_train, train_lab_categorical, test_size=0.20,
-                                                            stratify=train_lab_categorical, random_state=int(np.random.random()*(1<<32-1)), shuffle = True)
+train_im, valid_im, train_lab, valid_lab = train_test_split(x_train, y_train, test_size=0.20,
+                                                            stratify=y_train, random_state=int(np.random.random()*(1<<32-1)), shuffle = True)
 training_data = tf.data.Dataset.from_tensor_slices((train_im, train_lab))
 validation_data = tf.data.Dataset.from_tensor_slices((valid_im, valid_lab))
-test_data = tf.data.Dataset.from_tensor_slices((x_test, 
-test_lab_categorical))
+test_data = tf.data.Dataset.from_tensor_slices((x_test, y_test))
 autotune = tf.data.AUTOTUNE
 train_data_batches = training_data.shuffle(buffer_size=40000).batch(128).prefetch(buffer_size=autotune)
 valid_data_batches = validation_data.shuffle(buffer_size=10000).batch(32).prefetch(buffer_size=autotune)
@@ -338,9 +335,9 @@ import seaborn as sns
 def conf_matrix(predictions):
     import numpy as np
     ''' Plots conf. matrix and classification report '''
-    cm=confusion_matrix(y_test, np.argmax(np.round(predictions), axis=1))
+    cm=confusion_matrix(np.argmax(y_test, axis=1), np.argmax(np.round(predictions), axis=1))
     print("Classification Report:\n")
-    cr=classification_report(y_test,
+    cr=classification_report(np.argmax(y_test, axis=1),
                                 np.argmax(np.round(predictions), axis=1), 
                                 target_names=[class_types[i] for i in class_types])
     print(cr)
@@ -351,5 +348,5 @@ def conf_matrix(predictions):
     fig.savefig('heatmap.png', dpi=250)
 
 pred_class_resnet50 = ViT_model.predict(x_test)
-
+print(pred_class_resnet50)
 conf_matrix(pred_class_resnet50)
