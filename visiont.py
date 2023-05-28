@@ -271,7 +271,7 @@ tf.keras.utils.plot_model(ViT_model, rankdir='TB')
 
 
 ViT_model.compile(optimizer=tf.keras.optimizers.AdamW(learning_rate=1e-3), 
-                   loss = tf.keras.losses.CategoricalCrossentropy(from_logits=True, label_smoothing=0.1), 
+                   loss = tf.keras.losses.MeanSquaredError(), #tf.keras.losses.CategoricalCrossentropy(from_logits=True, label_smoothing=0.3), 
                    metrics=[tf.keras.metrics.CategoricalAccuracy(name="accuracy"), tf.keras.metrics.TopKCategoricalAccuracy(k=5, name='top5 acc'), 
                             tf.keras.metrics.Precision(name='pre'), 
                             tf.keras.metrics.Recall(name='rec')])
