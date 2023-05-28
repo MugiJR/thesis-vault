@@ -2,13 +2,12 @@
 def svg_to_tf():
     import tensorflow as tf
     import numpy as np
+    #assert tf.executing_eagerly()
     train_ds = tf.keras.utils.image_dataset_from_directory("app/pngArchives", class_names=[str(x) for x in range(1, 5+1)], color_mode="rgb",
-                                                                     image_size=(32, 32), interpolation='gaussian')
-    train_ds = train_ds.map(lambda x, y: (tf.cast(tf.math.round(x), tf.uint8), tf.cast(y, tf.uint8))) #tf.transpose(x, (0, 3, 1, 2))
-    #return train_ds, valid_ds
-    train_ds = train_ds.unbatch()
-    return (tf.squeeze(tf.convert_to_tensor(np.asarray(list(train_ds.map(lambda x, y: x))))).numpy(),
-             tf.squeeze(tf.convert_to_tensor(np.asarray(list(train_ds.map(lambda x, y: y))))).numpy())
+                                                                     image_size=(32, 32), interpolation='gaussian', batch_size=None)
+    train_ds = train_ds.map(lambda x, y: (tf.cast(tf.math.round(x), tf.uint8), tf.cast(y, tf.uint8)))
+    data = list(train_ds.as_numpy_iterator())
+    return np.asarray([x[0] for x in data]), np.asarray([x[1] for x in data])
 
 """
 def render_image_and_patches(image, patches):
